@@ -1,0 +1,116 @@
+const shipmentService = require('../services/shipment.service');
+
+exports.confirmShipment = async (req, res) => {
+    const { shipment, packages } = req.body;
+    const userId = req.body.userId || shipment?.userId;
+
+    if (!userId || isNaN(Number(userId))) {
+        return res.status(400).json({ error: "Validation Mismatch: A valid numeric user identity is required." });
+    }
+
+    try {
+        await shipmentService.createNestedShipment(userId, shipment, packages);
+        return res.status(200).json({ message: "Shipment saved successfully through ORM!" });
+    } catch (error) {
+        console.error("Sequelize Transaction Error:", error.message);
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getAllShipments = async (req, res) => {
+    const { userId, role } = req.query;
+    const normalizedRole = role?.toLowerCase();
+
+    if (normalizedRole !== 'admin' && (!userId || userId === 'undefined' || userId === 'null')) {
+        return res.status(400).json({ error: "Access Denied. Identity parameter missing." });
+    }
+
+    try {
+        const data = await shipmentService.getPagedShipments(req.query);
+        return res.status(200).json(data);
+    } catch (error) {
+        console.error("ORM Ledger Fetch Error:", error.message);
+        return res.status(500).json({ error: "Internal server error parsing data records." });
+    }
+};
+
+exports.trackShipment = async (req, res) => {
+    const { trackingId } = req.params;
+    try {
+        const shipmentData = await shipmentService.getShipmentDetails(trackingId);
+        if (!shipmentData) {
+            return res.status(404).json({ message: `Shipment record for ID ${trackingId} was not found.` });
+        }
+
+        // Exact translation contract matching your frontend's parsing logic
+        const formattedResponse = {
+            tracking_id: shipmentData.tracking_id || shipmentData.trackingId,
+            user_id: shipmentData.user_id || shipmentData.userId,
+            shipper_name: shipmentData.sender_name || shipmentData.senderName,
+            shipper_city: shipmentData.sender_city || shipmentData.senderCity,
+            sender_id_front_url: shipmentData.sender_id_front_url || shipmentData.senderIdFrontUrl || shipmentData.senderIdFront,
+            receiver_id_url: shipmentData.receiver_id_url || shipmentData.receiverIdUrl,
+            shipper_address: shipmentData.sender_address || shipmentData.senderAddress,
+            shipper_phone: shipmentData.sender_contact_num || shipmentData.senderContact,
+            shipper_country: shipmentData.sender_country || shipmentData.senderCountry,
+            receiver_name: shipmentData.receiver_name || shipmentData.receiverName,
+            receiver_phone: shipmentData.receiver_contact || shipmentData.receiverContact,
+            receiver_country: shipmentData.receiver_country || shipmentData.receiverCountry,
+            receiver_city: shipmentData.receiver_city || shipmentData.receiverCity,
+            receiver_address: shipmentData.receiver_address || shipmentData.receiverAddress,
+            created_at: shipmentData.created_at || shipmentData.createdAt,
+            status: shipmentData.status,
+            payment_method: shipmentData.billing_method || shipmentData.billingMethod,
+            currency: shipmentData.billing_currency || "NPR", 
+            total_amount: shipmentData.billing_total || shipmentData.billingTotal,
+            
+            shipment_package: (shipmentData.packages || []).map(pkg => ({
+                id: pkg.package_id || pkg.packageId,
+                type: pkg.package_type || pkg.packageType,
+                profile: pkg.package_profile || pkg.packageProfile,
+                hasHollow: pkg.has_hollow || pkg.hasHollow,
+                cbm: parseFloat(pkg.cbm_value || pkg.cbmValue) || 0,
+                
+                shipment_item: (pkg.items || []).map(item => ({
+                    id: item.item_id || item.itemId || item.id,
+                    description: item.item_description || item.itemDescription,
+                    qty: parseInt(item.item_qty || item.itemQty) || 1,
+                    price: parseFloat(item.item_price || item.itemPrice) || 0,
+                    weight: parseFloat(item.item_weight || item.itemWeight) || 0,
+                    hs_code: item.hs_code || item.hsCode
+                }))
+            }))
+        };
+
+        return res.status(200).json(formattedResponse);
+    } catch (error) {
+        console.error("Backend Error:", error);
+        return res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+};
+
+exports.updateStatus = async (req, res) => {
+    const { trackingId, status } = req.body;
+    if (!trackingId || !status) {
+        return res.status(400).json({ error: "Required payload parameters trackingId or status state properties are absent." });
+    }
+    try {
+        const updatedStatus = await shipmentService.updateStatus(trackingId, status);
+        return res.status(200).json({ message: "Logistics status state successfully saved.", status: updatedStatus });
+    } catch (error) {
+        return res.status(500).json({ error: "Internal operational update engine fault.", details: error.message });
+    }
+};
+
+exports.updateShipmentDetails = async (req, res) => {
+    const { trackingId } = req.params;
+    if (!trackingId || !req.body) {
+        return res.status(400).json({ error: "Validation Mismatch: Missing tracking ID or update payload data." });
+    }
+    try {
+        await shipmentService.updateCompleteShipment(trackingId, req.body);
+        return res.status(200).json({ message: `Shipment #${trackingId} records successfully replaced!` });
+    } catch (error) {
+        return res.status(500).json({ error: "Internal Server Error", details: error.message });
+    }
+};

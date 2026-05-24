@@ -1,0 +1,190 @@
+const sequelize = require('../config/database');
+const Shipment = require('../models/Shipment');
+const Package = require('../models/Package');
+const Item = require('../models/Item');
+const { Op } = require('sequelize');
+
+class ShipmentService {
+    async createNestedShipment(userId, shipment, packages) {
+        return await sequelize.transaction(async (t) => {
+            await Shipment.create({
+                tracking_id: shipment.trackingId,
+                user_id: userId,
+                sender_name: shipment.senderName,
+                sender_country: shipment.senderCountry,
+                sender_state: shipment.senderState,
+                sender_zipcode: shipment.senderZip,
+                sender_id_front_url: shipment.senderIdFront,
+                receiver_id_url: shipment.receiverIdUrl,
+                sender_type: shipment.senderType,
+                sender_city: shipment.senderCity,
+                sender_address: shipment.senderAddress,
+                sender_contact_num: shipment.senderContact,
+                sender_id_type: shipment.senderIdType,
+                receiver_name: shipment.receiverName,
+                receiver_contact: shipment.receiverContact,
+                receiver_country: shipment.receiverCountry,
+                receiver_city: shipment.receiverCity,
+                receiver_address: shipment.receiverAddress,
+                receiver_zip: shipment.receiverZip,
+                receiver_landmark: shipment.receiverLandmark,
+                receiver_state: shipment.receiverState,
+                billing_method: shipment.billingMethod,
+                billing_total: shipment.billingTotal,
+                total_weight_str: shipment.weight,
+                created_at: shipment.date,
+                status: "Confirmed"
+            }, { transaction: t });
+
+            for (const pkg of packages) {
+                await Package.create({
+                    package_id: pkg.packageId,
+                    parent_tracking_id: shipment.trackingId,
+                    package_type: pkg.type,
+                    package_profile: pkg.profile,
+                    has_hollow: pkg.hasHollow,
+                    dimensions_str: pkg.dims,
+                    cbm_value: pkg.cbm
+                }, { transaction: t });
+
+                for (const item of pkg.items) {
+                    await Item.create({
+                        parent_package_id: pkg.packageId,
+                        item_description: item.desc,
+                        item_weight: item.weight,
+                        item_qty: item.qty,
+                        item_price: item.price,
+                        hs_code: item.hsCode
+                    }, { transaction: t });
+                }
+            }
+        });
+    }
+
+    async getPagedShipments(filters) {
+        const { userId, role, dateFrom, dateTo, status, agentId, page, limit } = filters;
+        const normalizedRole = role?.toLowerCase();
+
+        let findOptions = { 
+            where: {},
+            order: [['created_at', 'DESC']] 
+        };
+
+        if (normalizedRole !== 'admin') {
+            findOptions.where.user_id = Number(userId);
+        }
+
+        if (dateFrom || dateTo) {
+            findOptions.where.created_at = {};
+            if (dateFrom) findOptions.where.created_at[Op.gte] = new Date(`${dateFrom}T00:00:00.000Z`);
+            if (dateTo) findOptions.where.created_at[Op.lte] = new Date(`${dateTo}T23:59:59.999Z`);
+        }
+        
+        if (status && status !== 'All') findOptions.where.status = status;
+        if (normalizedRole === 'admin' && agentId && agentId !== 'All') findOptions.where.user_id = Number(agentId);
+
+        const activePage = parseInt(page) || 1;
+        const activeLimit = parseInt(limit) || 50;
+        
+        findOptions.limit = activeLimit;
+        findOptions.offset = (activePage - 1) * activeLimit;
+
+        const { count, rows } = await Shipment.findAndCountAll(findOptions);
+        
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / activeLimit),
+            currentPage: activePage,
+            itemsPerPage: activeLimit,
+            shipments: rows
+        };
+    }
+
+    async getShipmentDetails(trackingId) {
+        return await Shipment.findOne({
+            where: { tracking_id: trackingId },
+            include: [{
+                model: Package,
+                as: 'packages', 
+                required: false,
+                include: [{
+                    model: Item,
+                    as: 'items',
+                    required: false
+                }]
+            }]
+        });
+    }
+
+    async updateStatus(trackingId, status) {
+        const shipment = await Shipment.findOne({ where: { tracking_id: trackingId } });
+        if (!shipment) throw new Error(`No active records matched tracking token: ${trackingId}`);
+        
+        shipment.status = status;
+        await shipment.save();
+        return status;
+    }
+
+    async updateCompleteShipment(trackingId, data) {
+        await sequelize.transaction(async (t) => {
+            const existingShipment = await Shipment.findOne({
+                where: { tracking_id: trackingId },
+                transaction: t
+            });
+
+            if (!existingShipment) throw new Error(`Target shipment with tracking number #${trackingId} not found.`);
+
+            await Shipment.update({
+                sender_name: data.shipper_name,
+                sender_contact_num: data.shipper_phone, 
+                sender_address: data.shipper_address,
+                sender_city: data.shipper_city,
+                sender_country: data.shipper_country,
+                receiver_name: data.receiver_name,
+                receiver_contact: data.receiver_phone, 
+                receiver_address: data.receiver_address,
+                receiver_city: data.receiver_city,
+                receiver_country: data.receiver_country,
+                billing_method: data.payment_method, 
+                billing_total: data.total_amount,
+                status: data.status 
+            }, { where: { tracking_id: trackingId }, transaction: t });
+
+            if (data.shipment_package && Array.isArray(data.shipment_package)) {
+                for (const pkg of data.shipment_package) {
+                    const currentPackageId = pkg.package_id || pkg.id;
+
+                    await Package.update({
+                        package_type: pkg.type,
+                        package_profile: pkg.profile,
+                        has_hollow: pkg.hasHollow,
+                        dimensions_str: pkg.dims || pkg.dimensions_str,
+                        cbm_value: String(pkg.cbm) 
+                    }, {
+                        where: { package_id: currentPackageId, parent_tracking_id: trackingId },
+                        transaction: t
+                    });
+
+                    if (pkg.shipment_item && Array.isArray(pkg.shipment_item)) {
+                        for (const item of pkg.shipment_item) {
+                            const currentItemId = item.item_id || item.id;
+
+                            await Item.update({
+                                item_description: item.description,
+                                item_qty: item.qty,
+                                item_weight: String(item.weight),
+                                item_price: item.price,
+                                hs_code: item.hs_code || item.hsCode
+                            }, {
+                                where: { id: currentItemId, parent_package_id: currentPackageId },
+                                transaction: t
+                            });
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+module.exports = new ShipmentService();

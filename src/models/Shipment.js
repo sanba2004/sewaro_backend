@@ -9,8 +9,10 @@ const Shipment = sequelize.define('Shipment', {
   sender_state: { type: DataTypes.STRING },
   sender_zipcode: { type: DataTypes.STRING },
   sender_id_front_url: { type: DataTypes.STRING },
-  sender_id_back_url: { type: DataTypes.STRING },
-  sender_type: { type: DataTypes.STRING },
+receiver_id_url: {
+    type: DataTypes.STRING,
+    field: 'receiver_id_url' // 🌟 Instructs Sequelize to look for your altered database column
+},  sender_type: { type: DataTypes.STRING },
   sender_city: { type: DataTypes.STRING },
   sender_address: { type: DataTypes.TEXT },
   sender_contact_num: { type: DataTypes.STRING },
