@@ -36,6 +36,16 @@ app.use((req, res, next) => {
   res.setHeader('Surrogate-Control', 'no-store');
   next();
 });
+app.use(cors({
+  origin: [
+    'https://sewaro-frontend.vercel.app', // Your production frontend
+    'http://localhost:5173',               // Vite local development port (if using Vite)
+    'http://localhost:3000'                // Create React App local development port
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 // const PORT = process.env.PORT || 5000;
 
 // sequelize.authenticate()
