@@ -57,3 +57,25 @@ exports.updateUserPassword = async (req, res) => {
         });
     }
 };
+
+// 🎯 GET USER PROFILE CONTROLLER
+exports.getUserProfile = async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        const userProfile = await authService.fetchProfileById(userId);
+        
+        return res.status(200).json({ 
+            success: true, 
+            user: userProfile 
+        });
+    } catch (error) {
+        console.error('Error in getUserProfile controller:', error);
+        
+        if (error.message === "User profile not found.") {
+            return res.status(404).json({ success: false, error: error.message });
+        }
+        
+        return res.status(500).json({ success: false, error: "Internal server error." });
+    }
+};

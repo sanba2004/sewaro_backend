@@ -13,7 +13,13 @@ const User = sequelize.define('User', {
     unique: true     // Keeps it strictly non-repeatable at the database layer
   },
   is_verified: { type: DataTypes.INTEGER, defaultValue: 0 },
-  otp_code: { type: DataTypes.STRING }
+  otp_code: { type: DataTypes.STRING },
+  created_at: { 
+    type: DataTypes.DATE, 
+    defaultValue: DataTypes.NOW,
+    field: 'created_at' 
+  }
 }, { tableName: 'users', timestamps: false });
+
 
 module.exports = User;

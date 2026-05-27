@@ -152,6 +152,24 @@ class AuthService {
 
         return true;
     }
+    // Place this right inside your AuthService class (e.g., above changeUserPassword)
+    async fetchProfileById(userId) {
+        if (!userId) {
+            throw new Error("User ID is required to fetch profile records.");
+        }
+
+        // Target the record by primary key using Sequelize
+        const user = await User.findByPk(userId, {
+            attributes: ['id', ['full_name', 'name'], 'email', 'role'] 
+            // 💡 Notice ['full_name', 'name'] aliases your DB column to 'name' automatically!
+        });
+
+        if (!user) {
+            throw new Error("User profile not found.");
+        }
+
+        return user;
+    }
 }
 
 module.exports = new AuthService();
