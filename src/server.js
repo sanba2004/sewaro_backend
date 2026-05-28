@@ -188,27 +188,31 @@ const PORT = process.env.PORT || 5000;
 //         console.error('❌ ORM initialization failure:', err.message);
 //         process.exit(1);
 //     });
-
+const PORT = process.env.PORT || 5000;
+const bcrypt = require('bcrypt'); // Make sure this is installed and imported
 
 sequelize.authenticate()
     .then(async () => {
         console.log('🔗 Successfully authenticated with Aiven Cloud Database.');
         
-        // 🧼 1. Wipe out the bloated tables and rebuild them completely fresh
+        // 🧼 1. Rebuild tables fresh to permanently clear out the 64-key blockages
         console.log('💥 FORCE RESET: Dropping bloated tables and rebuilding fresh schemas...');
         await sequelize.sync({ force: true }); 
         console.log('✨ Database structural layout reset successfully!');
 
-        // 🌱 2. AUTOMATICALLY SEED ADMIN ACCOUNT BACK IN
+        // 🌱 2. AUTOMATICALLY SEED ADMINISTRATOR WITH SECURE CRYPTO BCRYPT HASH
         try {
             console.log('🌱 Seeding default administrator account...');
             
-            // Adjust the model name (e.g., User or Admin) and field names to match your schema attributes
+            // Generate a real production-grade hash so your login controllers work perfectly
+            const secureAdminHash = await bcrypt.hash('YourSecurePassword123', 10); // 👈 Put your desired admin password here
+            
             await sequelize.models.User.create({
-                full_Name: 'System Administrator',
-                email: 'sewaro151@gmail.com',         // 👈 Put your admin Gmail here
-                password: 'adminisgood8808',     // 👈 Put your admin password here
-                role: 'admin'                          // Ensures this user has admin permissions
+                full_name: 'System Administrator',
+                email: 'sewaro151@gmail.com',         // 👈 Your admin login email
+                password_hash: secureAdminHash,        // ✨ Passes a valid hash safely!
+                role: 'admin',                         // Grants master dashboard privileges
+                is_verified: 1                         // Pre-verifies admin so you don't need an OTP to log in
             });
 
             console.log('🚀 Admin account injected successfully into clean tables!');
