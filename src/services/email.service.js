@@ -201,7 +201,7 @@ class EmailService {
                 // 3. ✨ UPGRADED: Professional email address for system alerts
                 from: 'Sewaro Quotes <quotes@namastesewaro.com>',
                 // 4. NOTE: Keeping your admin email here is correct, as you want quotes to land in your inbox!
-                to: 'redsanba@gmail.com', 
+                to: 'ingwahang0101@gmail.com', 
                 subject: `🚨 New Quote Request Alert: [${deliveryType ? deliveryType.toUpperCase() : 'STANDARD'} Handling]`,
                 html: `
                   <div style="font-family: sans-serif; padding: 20px; color: #1a2530; max-width: 600px; border: 1px solid #eceff0; border-radius: 12px;">
