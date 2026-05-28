@@ -197,7 +197,7 @@ sequelize.authenticate()
         
         // 🧼 1. Rebuild tables fresh to permanently clear out the 64-key blockages
         console.log('💥 FORCE RESET: Dropping bloated tables and rebuilding fresh schemas...');
-        await sequelize.sync({ force: true }); 
+        await sequelize.sync(); 
         console.log('✨ Database structural layout reset successfully!');
 
         // 🌱 2. AUTOMATICALLY SEED ADMINISTRATOR WITH SECURE CRYPTO BCRYPT HASH
