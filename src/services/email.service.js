@@ -165,22 +165,21 @@
 
 
 
-
 const resend = require('../config/mailer');
 
 class EmailService {
     async sendVerificationOtp(email, fullName, otp) {
         try {
             const data = await resend.emails.send({
-                from: 'Sewaro Logistics <onboarding@resend.dev>',
-                // ✨ FIX: Set this to your verified Resend account email for testing
-                to: 'sewaro151@gmail.com', 
+                // 1. ✨ UPGRADED: Using your official brand domain instead of the free sandbox!
+                from: 'Sewaro Logistics <no-reply@namastesewaro.com>',
+                // 2. ✨ DYNAMIC: Sending directly to the registering user's input email address!
+                to: email, 
                 subject: 'Verify Your Sewa Logistics Account',
                 html: `<h3>Welcome ${fullName}</h3>
                        <p>Verification Code for client application (${email}) is: <b style="font-size: 20px; color: #0250a3;">${otp}</b></p>`
             });
 
-            // If Resend returns an internal validation error block, catch it cleanly
             if (data.error) {
                 console.error('⚠️ Resend configuration block:', data.error.message);
                 throw new Error(data.error.message);
@@ -199,9 +198,10 @@ class EmailService {
         
         try {
             const data = await resend.emails.send({
-                from: 'Sewaro Quotes <onboarding@resend.dev>',
-                // ✨ FIX: Change this from redsanba to your verified Resend account email
-                to: 'sewaro151@gmail.com', 
+                // 3. ✨ UPGRADED: Professional email address for system alerts
+                from: 'Sewaro Quotes <quotes@namastesewaro.com>',
+                // 4. NOTE: Keeping your admin email here is correct, as you want quotes to land in your inbox!
+                to: 'redsanba@gmail.com', 
                 subject: `🚨 New Quote Request Alert: [${deliveryType ? deliveryType.toUpperCase() : 'STANDARD'} Handling]`,
                 html: `
                   <div style="font-family: sans-serif; padding: 20px; color: #1a2530; max-width: 600px; border: 1px solid #eceff0; border-radius: 12px;">
@@ -210,7 +210,7 @@ class EmailService {
                       <tr><td style="padding: 6px 0; font-weight: bold; color: #566573;">Route:</td><td style="padding: 6px 0; color: #0f1c2a;">From ${senderCountry} to ${receiverCountry}</td></tr>
                       <tr><td style="padding: 6px 0; font-weight: bold; color: #566573;">Mass Weight:</td><td style="padding: 6px 0; color: #0f1c2a;">${weight} kg</td></tr>
                       <tr><td style="padding: 6px 0; font-weight: bold; color: #566573;">Service Type:</td><td style="padding: 6px 0; color: #0f1c2a;">${deliveryType === 'special' ? '🔴 Special Service' : '🔵 Standard Service'}</td></tr>
-                      <tr><td style="padding: 6px 0; font-weight: bold; color: #566573;">Client Contact:</td><td style="padding: 6px 0; color: #0056b3; font-weight: bold;">${contactInfo}</td></tr>
+                      <tr><td style="padding: 6px 0; font-weight: bold; color: #0056b3; font-weight: bold;">${contactInfo}</td></tr>
                     </table>
                     <div style="background: #f7f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #0250a3;">
                       <p style="margin: 0; line-height: 1.6; color: #566573; font-size: 14px;">${description}</p>
