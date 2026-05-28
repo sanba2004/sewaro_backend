@@ -174,14 +174,49 @@ app.use('/api/pricing', pricingRoutes);
 // Database connection and app listener section
 const PORT = process.env.PORT || 5000;
 
+// sequelize.authenticate()
+//     .then(async () => {
+//         console.log('🔗 Successfully authenticated with Aiven Cloud Database.');
+        
+//         console.log('🏗️ Synchronizing ORM schemas with database ledger instances...');
+//         await sequelize.sync(); 
+//         console.log('🔄 Database schema mapped to ORM entities successfully.');
+
+//         app.listen(PORT, () => console.log(`🚀 Server processing on http://localhost:${PORT}`));
+//     })
+//     .catch(err => {
+//         console.error('❌ ORM initialization failure:', err.message);
+//         process.exit(1);
+//     });
+
+
 sequelize.authenticate()
     .then(async () => {
         console.log('🔗 Successfully authenticated with Aiven Cloud Database.');
         
-        console.log('🏗️ Synchronizing ORM schemas with database ledger instances...');
-        await sequelize.sync({ alter: true }); 
-        console.log('🔄 Database schema mapped to ORM entities successfully.');
+        // 🧼 1. Wipe out the bloated tables and rebuild them completely fresh
+        console.log('💥 FORCE RESET: Dropping bloated tables and rebuilding fresh schemas...');
+        await sequelize.sync({ force: true }); 
+        console.log('✨ Database structural layout reset successfully!');
 
+        // 🌱 2. AUTOMATICALLY SEED ADMIN ACCOUNT BACK IN
+        try {
+            console.log('🌱 Seeding default administrator account...');
+            
+            // Adjust the model name (e.g., User or Admin) and field names to match your schema attributes
+            await sequelize.models.User.create({
+                fullName: 'System Administrator',
+                email: 'sewaro151@gmail.com',         // 👈 Put your admin Gmail here
+                password: 'YourSecurePassword123',     // 👈 Put your admin password here
+                role: 'admin'                          // Ensures this user has admin permissions
+            });
+
+            console.log('🚀 Admin account injected successfully into clean tables!');
+        } catch (seedError) {
+            console.error('⚠️ Admin seeding skipped or failed:', seedError.message);
+        }
+
+        // Start processing requests on Render
         app.listen(PORT, () => console.log(`🚀 Server processing on http://localhost:${PORT}`));
     })
     .catch(err => {
