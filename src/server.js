@@ -205,9 +205,9 @@ sequelize.authenticate()
             
             // Adjust the model name (e.g., User or Admin) and field names to match your schema attributes
             await sequelize.models.User.create({
-                fullName: 'System Administrator',
+                full_Name: 'System Administrator',
                 email: 'sewaro151@gmail.com',         // 👈 Put your admin Gmail here
-                password: 'YourSecurePassword123',     // 👈 Put your admin password here
+                password: 'adminisgood8808',     // 👈 Put your admin password here
                 role: 'admin'                          // Ensures this user has admin permissions
             });
 
