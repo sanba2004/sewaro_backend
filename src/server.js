@@ -285,37 +285,65 @@ app.use('/api/pricing', pricingRoutes);
 // 🌐 MASTER PORT DECLARATION (Only defined ONCE here)
 const PORT = process.env.PORT || 5000;
 const bcrypt = require('bcrypt'); 
+const PricingTier = require('./models/PricingTier');
 
 sequelize.authenticate()
     .then(async () => {
         console.log('🔗 Successfully authenticated with Aiven Cloud Database.');
         
-        // 🧼 1. Rebuild tables fresh to permanently clear out the 64-key blockages
-        console.log('💥 FORCE RESET: Dropping bloated tables and rebuilding fresh schemas...');
-        await sequelize.sync({ force: true }); 
-        console.log('✨ Database structural layout reset successfully!');
+        // 🛡️ SAFE STORAGE ALIGNMENT (No data wiping, no aggressive alterations)
+        console.log('🏗️ Synchronizing ORM schemas with database ledger instances safely...');
+        await sequelize.sync(); 
+        console.log('🔄 Database schema mapped to ORM entities successfully.');
 
-        // 🌱 2. AUTOMATICALLY SEED ADMINISTRATOR WITH SECURE CRYPTO BCRYPT HASH
+        // 🌱 CONDITIONAL SEEDER 1: Verify and inject the default Admin if missing
         try {
-            console.log('🌱 Seeding default administrator account...');
+            const adminCheck = await sequelize.models.User.findOne({ where: { email: 'sewaro151@gmail.com' } });
             
-            // Generate a real production-grade hash so your login controllers work perfectly
-            const secureAdminHash = await bcrypt.hash('adminisgood8808', 10); // 👈 Put your desired admin password here
-            
-            await sequelize.models.User.create({
-                full_name: 'System Administrator',
-                email: 'sewaro151@gmail.com',         // 👈 Your admin login email
-                password_hash: secureAdminHash,        // Passes a valid hash safely!
-                role: 'admin',                         // Grants master dashboard privileges
-                is_verified: 1                         // Pre-verifies admin so you don't need an OTP to log in
-            });
-
-            console.log('🚀 Admin account injected successfully into clean tables!');
-        } catch (seedError) {
-            console.error('⚠️ Admin seeding skipped or failed:', seedError.message);
+            if (!adminCheck) {
+                console.log('🌱 Admin account not detected. Injecting administrative access credentials...');
+                const secureAdminHash = await bcrypt.hash('adminisgood8808', 10);
+                
+                await sequelize.models.User.create({
+                    full_name: 'System Administrator',
+                    email: 'sewaro151@gmail.com',
+                    password_hash: secureAdminHash,
+                    role: 'admin',
+                    is_verified: 1
+                });
+                console.log('🚀 Admin account injected successfully!');
+            } else {
+                console.log('ℹ️ Admin user identity already exists in ledger registry.');
+            }
+        } catch (adminSeedError) {
+            console.error('⚠️ Admin authentication seeding skipped:', adminSeedError.message);
         }
 
-        // Start processing requests on Render
+        // 🌱 CONDITIONAL SEEDER 2: Verify and inject Logistics Pricing Tiers if table is empty
+        try {
+            const tierCount = await PricingTier.count();
+            
+            if (tierCount === 0) {
+                console.log('🌱 Pricing tiers matrix empty. Populating default range parameters...');
+                
+                await PricingTier.bulkCreate([
+                    { tier_name: 'Light Weight Scale',  min_weight: 0.00,  max_weight: 9.49,   rate_per_kg: 590.00 },
+                    { tier_name: 'Medium Scale',        min_weight: 9.50,  max_weight: 19.49,  rate_per_kg: 500.00 },
+                    { tier_name: 'Standard Bulk',       min_weight: 19.50, max_weight: 49.99,  rate_per_kg: 478.00 },
+                    { tier_name: 'Heavy Bulk',          min_weight: 50.00, max_weight: 99.99,  rate_per_kg: 478.00 },
+                    { tier_name: 'Commercial Freight',  min_weight: 100.00, max_weight: 500.00, rate_per_kg: 445.00 },
+                    { tier_name: 'Overweight Ceiling',  min_weight: 500.01, max_weight: 99999.0, rate_per_kg: 445.00 }
+                ]);
+                
+                console.log('🚀 Default shipping rate structures written to the database!');
+            } else {
+                console.log('ℹ️ Logistics pricing table matrix already populated.');
+            }
+        } catch (pricingSeedError) {
+            console.error('⚠️ Pricing structure seeding skipped:', pricingSeedError.message);
+        }
+
+        // Open communication gate pathways on Render
         app.listen(PORT, () => console.log(`🚀 Server processing on port ${PORT}`));
     })
     .catch(err => {
