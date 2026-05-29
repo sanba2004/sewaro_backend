@@ -62,27 +62,7 @@
 // };
 // // Append this separate function block to your existing pricing.controller.js file
 
-// exports.deleteTier = async (req, res) => {
-//   try {
-//     const { id } = req.params;
 
-//     // 🔍 1. Locate the specific bracket row by its Primary Key ID
-//     const tier = await PricingTier.findByPk(id);
-
-//     // 🛡️ 2. If it doesn't exist, return a descriptive error
-//     if (!tier) {
-//       return res.status(404).json({ error: 'The requested pricing tier could not be found.' });
-//     }
-
-//     // 🗑️ 3. Drop the row record from the database table
-//     await tier.destroy();
-
-//     return res.status(200).json({ message: 'Pricing tier range dropped successfully.' });
-//   } catch (error) {
-//     console.error('❌ Error executing pricing tier deletion sequence:', error);
-//     return res.status(500).json({ error: 'Database transaction error occurred while removing the pricing tier.' });
-//   }
-// };
 
 
 // pricing.controller.js
@@ -151,5 +131,26 @@ exports.updateTier = async (req, res) => {
     res.status(200).json({ message: 'Pricing tier updated successfully!', tier });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update tier: ' + error.message });
+  }
+};
+exports.deleteTier = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 🔍 1. Locate the specific bracket row by its Primary Key ID
+    const tier = await PricingTier.findByPk(id);
+
+    // 🛡️ 2. If it doesn't exist, return a descriptive error
+    if (!tier) {
+      return res.status(404).json({ error: 'The requested pricing tier could not be found.' });
+    }
+
+    // 🗑️ 3. Drop the row record from the database table
+    await tier.destroy();
+
+    return res.status(200).json({ message: 'Pricing tier range dropped successfully.' });
+  } catch (error) {
+    console.error('❌ Error executing pricing tier deletion sequence:', error);
+    return res.status(500).json({ error: 'Database transaction error occurred while removing the pricing tier.' });
   }
 };
