@@ -8,7 +8,13 @@ const Package = sequelize.define('Package', {
   package_profile: { type: DataTypes.STRING },
   has_hollow: { type: DataTypes.STRING },
   dimensions_str: { type: DataTypes.STRING },
-  cbm_value: { type: DataTypes.STRING }
+  cbm_value: { type: DataTypes.STRING },
+  total_weight: { 
+    type: DataTypes.DECIMAL(10, 2), 
+    allowNull: true, 
+    defaultValue: 0.00,
+    field: 'total_weight' // Matches your MySQL column name
+  }
 }, { tableName: 'shipment_package', timestamps: false });
 
 module.exports = Package;

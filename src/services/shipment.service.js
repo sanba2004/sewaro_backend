@@ -5,62 +5,121 @@ const Item = require('../models/Item');
 const { Op } = require('sequelize');
 
 class ShipmentService {
+    // async createNestedShipment(userId, shipment, packages) {
+    //     return await sequelize.transaction(async (t) => {
+    //         await Shipment.create({
+    //             tracking_id: shipment.trackingId,
+    //             user_id: userId,
+    //             sender_name: shipment.senderName,
+    //             sender_country: shipment.senderCountry,
+    //             sender_state: shipment.senderState,
+    //             sender_zipcode: shipment.senderZip,
+    //             sender_id_front_url: shipment.senderIdFront,
+    //             receiver_id_url: shipment.receiverIdUrl,
+    //             sender_type: shipment.senderType,
+    //             sender_city: shipment.senderCity,
+    //             sender_address: shipment.senderAddress,
+    //             sender_contact_num: shipment.senderContact,
+    //             sender_id_type: shipment.senderIdType,
+    //             receiver_name: shipment.receiverName,
+    //             receiver_contact: shipment.receiverContact,
+    //             receiver_country: shipment.receiverCountry,
+    //             receiver_city: shipment.receiverCity,
+    //             receiver_address: shipment.receiverAddress,
+    //             receiver_zip: shipment.receiverZip,
+    //             receiver_landmark: shipment.receiverLandmark,
+    //             receiver_state: shipment.receiverState,
+    //             billing_method: shipment.billingMethod,
+    //             billing_total: shipment.billingTotal,
+    //             total_weight_str: shipment.weight,
+    //             created_at: shipment.date,
+    //             status: "Confirmed"
+    //         }, { transaction: t });
+
+    //         for (const pkg of packages) {
+    //             await Package.create({
+    //                 package_id: pkg.packageId,
+    //                 parent_tracking_id: shipment.trackingId,
+    //                 package_type: pkg.type,
+    //                 package_profile: pkg.profile,
+    //                 has_hollow: pkg.hasHollow,
+    //                 dimensions_str: pkg.dims,
+    //                 cbm_value: pkg.cbm
+    //             }, { transaction: t });
+
+    //             for (const item of pkg.items) {
+    //                 await Item.create({
+    //                     parent_package_id: pkg.packageId,
+    //                     item_description: item.desc,
+    //                     item_weight: item.weight,
+    //                     item_qty: item.qty,
+    //                     item_price: item.price,
+    //                     hs_code: item.hsCode
+    //                 }, { transaction: t });
+    //             }
+    //         }
+    //     });
+    // }
+
+
     async createNestedShipment(userId, shipment, packages) {
-        return await sequelize.transaction(async (t) => {
-            await Shipment.create({
-                tracking_id: shipment.trackingId,
-                user_id: userId,
-                sender_name: shipment.senderName,
-                sender_country: shipment.senderCountry,
-                sender_state: shipment.senderState,
-                sender_zipcode: shipment.senderZip,
-                sender_id_front_url: shipment.senderIdFront,
-                receiver_id_url: shipment.receiverIdUrl,
-                sender_type: shipment.senderType,
-                sender_city: shipment.senderCity,
-                sender_address: shipment.senderAddress,
-                sender_contact_num: shipment.senderContact,
-                sender_id_type: shipment.senderIdType,
-                receiver_name: shipment.receiverName,
-                receiver_contact: shipment.receiverContact,
-                receiver_country: shipment.receiverCountry,
-                receiver_city: shipment.receiverCity,
-                receiver_address: shipment.receiverAddress,
-                receiver_zip: shipment.receiverZip,
-                receiver_landmark: shipment.receiverLandmark,
-                receiver_state: shipment.receiverState,
-                billing_method: shipment.billingMethod,
-                billing_total: shipment.billingTotal,
-                total_weight_str: shipment.weight,
-                created_at: shipment.date,
-                status: "Confirmed"
+    return await sequelize.transaction(async (t) => {
+        await Shipment.create({
+            tracking_id: shipment.trackingId,
+            user_id: userId,
+            sender_name: shipment.senderName,
+            sender_country: shipment.senderCountry,
+            sender_state: shipment.senderState,
+            sender_zipcode: shipment.senderZip,
+            sender_id_front_url: shipment.senderIdFront,
+            receiver_id_url: shipment.receiverIdUrl,
+            sender_type: shipment.senderType,
+            sender_city: shipment.senderCity,
+            sender_address: shipment.senderAddress,
+            sender_contact_num: shipment.senderContact,
+            sender_id_type: shipment.senderIdType,
+            receiver_name: shipment.receiverName,
+            receiver_contact: shipment.receiverContact,
+            receiver_country: shipment.receiverCountry,
+            receiver_city: shipment.receiverCity,
+            receiver_address: shipment.receiverAddress,
+            receiver_zip: shipment.receiverZip,
+            receiver_landmark: shipment.receiverLandmark,
+            receiver_state: shipment.receiverState,
+            billing_method: shipment.billingMethod,
+            billing_total: shipment.billingTotal,
+            total_weight_str: shipment.weight,
+            created_at: shipment.date,
+            status: "Confirmed"
+        }, { transaction: t });
+
+        for (const pkg of packages) {
+            await Package.create({
+                package_id: pkg.packageId,
+                parent_tracking_id: shipment.trackingId,
+                package_type: pkg.type,
+                package_profile: pkg.profile,
+                has_hollow: pkg.hasHollow,
+                dimensions_str: pkg.dims,
+                cbm_value: pkg.cbm,
+                
+                // 🌟 FIX HERE: Catch the value sent directly from the frontend text field input
+                total_weight: parseFloat(pkg.totalWeight) || 0.00
             }, { transaction: t });
 
-            for (const pkg of packages) {
-                await Package.create({
-                    package_id: pkg.packageId,
-                    parent_tracking_id: shipment.trackingId,
-                    package_type: pkg.type,
-                    package_profile: pkg.profile,
-                    has_hollow: pkg.hasHollow,
-                    dimensions_str: pkg.dims,
-                    cbm_value: pkg.cbm
+            for (const item of pkg.items) {
+                await Item.create({
+                    parent_package_id: pkg.packageId,
+                    item_description: item.desc,
+                    item_weight: item.weight,
+                    item_qty: item.qty,
+                    item_price: item.price,
+                    hs_code: item.hsCode
                 }, { transaction: t });
-
-                for (const item of pkg.items) {
-                    await Item.create({
-                        parent_package_id: pkg.packageId,
-                        item_description: item.desc,
-                        item_weight: item.weight,
-                        item_qty: item.qty,
-                        item_price: item.price,
-                        hs_code: item.hsCode
-                    }, { transaction: t });
-                }
             }
-        });
-    }
-
+        }
+    });
+}
     async getPagedShipments(filters) {
         const { userId, role, dateFrom, dateTo, status, agentId, page, limit } = filters;
         const normalizedRole = role?.toLowerCase();
@@ -159,7 +218,8 @@ class ShipmentService {
                         package_profile: pkg.profile,
                         has_hollow: pkg.hasHollow,
                         dimensions_str: pkg.dims || pkg.dimensions_str,
-                        cbm_value: String(pkg.cbm) 
+                        cbm_value: String(pkg.cbm) ,
+                        total_weight: parseFloat(pkg.total_weight || pkg.totalWeight) || 0.00
                     }, {
                         where: { package_id: currentPackageId, parent_tracking_id: trackingId },
                         transaction: t
