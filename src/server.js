@@ -247,9 +247,10 @@ const shipmentRoutes = require('./routes/shipment.routes');
 const adminRoutes = require('./routes/admin.routes');
 const quoteRoutes = require('./routes/quote.routes');
 const pricingRoutes = require('./routes/pricing.routes');
+const pricingShipmentRouter = require('./routes/pricingShipment.routes');
 
 const app = express();
-
+const PricingShipment = require('./models/PricingShipment');
 // ✨ Apply the correct production CORS policy at the very top
 app.use(cors({
   origin: [
@@ -282,7 +283,7 @@ app.use('/api/shipments', shipmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/pricing', pricingRoutes);
-
+app.use('/api/pricing-shipments', pricingShipmentRouter);
 // 🌐 MASTER PORT DECLARATION (Only defined ONCE here)
 const PORT = process.env.PORT || 5000;
 const bcrypt = require('bcrypt'); 
@@ -358,6 +359,28 @@ sequelize.authenticate()
         // } catch (pricingSeedError) {
         //     console.error('⚠️ Pricing structure seeding skipped:', pricingSeedError.message);
         // }
+        try {
+            // Check if our brand new table already has seed entries
+            const count = await PricingShipment.count();
+            if (count === 0) {
+                console.log('🌱 Populating fresh multi-country parameters into pricing_shipments...');
+                await PricingShipment.bulkCreate([
+                    // --- MALAYSIA TO NEPAL ---
+                    { sender_country: 'Malaysia', receiver_country: 'Nepal', tier_name: 'MY-NP Light Scale', min_weight: 0.00, max_weight: 9.49,  rate_per_kg: 590.00 },
+                    { sender_country: 'Malaysia', receiver_country: 'Nepal', tier_name: 'MY-NP Medium Scale', min_weight: 9.50, max_weight: 19.49, rate_per_kg: 500.00 },
+                    { sender_country: 'Malaysia', receiver_country: 'Nepal', tier_name: 'MY-NP Bulk Freight', min_weight: 19.50, max_weight: 9999.0, rate_per_kg: 478.00 },
+
+                    // --- NEPAL TO MALAYSIA ---
+                    { sender_country: 'Nepal', receiver_country: 'Malaysia', tier_name: 'NP-MY Economy Base', min_weight: 0.00, max_weight: 14.99, rate_per_kg: 650.00 },
+                    { sender_country: 'Nepal', receiver_country: 'Malaysia', tier_name: 'NP-MY Bulk Cargo', min_weight: 15.00, max_weight: 9999.0, rate_per_kg: 580.00 }
+                ]);
+                console.log('🚀 Route rulesets written to pricing_shipments safely!');
+            } else {
+                console.log('ℹ️ New matrix rows are already seeded.');
+            }
+        } catch (seederErr) {
+            console.error('⚠️ Seeding matrix skipped or aborted: ', seederErr.message);
+        }
 
         // Open communication gate pathways on Render
         app.listen(PORT, () => console.log(`🚀 Server processing on port ${PORT}`));
