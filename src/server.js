@@ -360,7 +360,21 @@ sequelize.authenticate()
         //     console.error('⚠️ Pricing structure seeding skipped:', pricingSeedError.message);
         // }
         
-
+        try {
+                    console.log('⚡ Running migration to add invoice_notes column...');
+                    await sequelize.query(`
+                        ALTER TABLE shipment 
+                        ADD COLUMN invoice_notes TEXT DEFAULT NULL;
+                    `);
+                    console.log('--- 🎉 SUCCESS: invoice_notes column successfully created! ---');
+                } catch (err) {
+                    // MySQL error code 1060 means "Duplicate column name" (the column already exists)
+                    if (err.parent && err.parent.errno === 1060) {
+                        console.log('--- ℹ️ NOTIFICATION: invoice_notes column already exists, skipping. ---');
+                    } else {
+                        console.error('--- ❌ ACTUAL SQL ERROR: ---', err.message);
+                    }
+                }
         // Open communication gate pathways on Render
         app.listen(PORT, () => console.log(`🚀 Server processing on port ${PORT}`));
     })

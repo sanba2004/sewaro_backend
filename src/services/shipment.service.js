@@ -287,7 +287,8 @@ class ShipmentService {
                 billing_total: shipment.billingTotal,
                 total_weight_str: shipment.weight, // Maps clean aggregate package weight safely
                 created_at: shipment.date,
-                status: "Confirmed"
+                status: "Confirmed",
+                invoice_notes: shipment.invoiceNotes
             }, { transaction: t });
 
             // 2. Loop through and map packages safely
