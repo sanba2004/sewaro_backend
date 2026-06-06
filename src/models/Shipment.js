@@ -29,7 +29,8 @@ receiver_id_url: {
   billing_total: { type: DataTypes.DECIMAL(10, 2) },
   total_weight_str: { type: DataTypes.STRING },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
-  status: { type: DataTypes.STRING, defaultValue: 'Confirmed' }
+  status: { type: DataTypes.STRING, defaultValue: 'Confirmed' },
+  invoice_notes: { type: DataTypes.TEXT, field: 'invoice_notes' }
 }, { tableName: 'shipment', timestamps: false });
 
 
