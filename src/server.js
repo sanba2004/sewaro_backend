@@ -298,83 +298,23 @@ sequelize.authenticate()
         await sequelize.sync(); 
         console.log('🔄 Database schema mapped to ORM entities successfully.');
 
-        // 🌱 CONDITIONAL SEEDER 1: Verify and inject the default Admin if missing
-        // try {
-        //     const adminCheck = await sequelize.models.User.findOne({ where: { email: 'sewaro151@gmail.com' } });
-            
-        //     if (!adminCheck) {
-        //         console.log('🌱 Admin account not detected. Injecting administrative access credentials...');
-        //         const secureAdminHash = await bcrypt.hash('adminisgood8808', 10);
-                
-        //         await sequelize.models.User.create({
-        //             full_name: 'System Administrator',
-        //             email: 'sewaro151@gmail.com',
-        //             password_hash: secureAdminHash,
-        //             role: 'admin',
-        //             is_verified: 1
-        //         });
-        //         console.log('🚀 Admin account injected successfully!');
-        //     } else {
-        //         console.log('ℹ️ Admin user identity already exists in ledger registry.');
-        //     }
-        // } catch (adminSeedError) {
-        //     console.error('⚠️ Admin authentication seeding skipped:', adminSeedError.message);
-        // }
-        // Add this temporary block right after your database authentication/connection line:
-        // try {
-  // 🌟 FIX: Removed "IF NOT EXISTS" because MySQL handles this via the catch block instead
-        // await sequelize.query(`
-        //     ALTER TABLE shipment_package 
-        //     ADD COLUMN total_weight DECIMAL(10, 2) DEFAULT 0.00;
-        // `);
-        // console.log('--- 🎉 SUCCESS: total_weight column successfully created on Aiven cloud! ---');
-        // } catch (err) {
-        // // MySQL error code 1060 means "Duplicate column name" (the column already exists)
-        // if (err.parent && err.parent.errno === 1060) {
-        //     console.log('--- ℹ️ NOTIFICATION: Column already exists, skipping safe migration. ---');
-        // } else {
-        //     console.error('--- ❌ ACTUAL SQL ERROR: ---', err.message);
-        // }
-        // }
-        // 🌱 CONDITIONAL SEEDER 2: Verify and inject Logistics Pricing Tiers if table is empty
-        // try {
-        //     const tierCount = await PricingTier.count();
-            
-        //     if (tierCount === 0) {
-        //         console.log('🌱 Pricing tiers matrix empty. Populating default range parameters...');
-                
-        //         await PricingTier.bulkCreate([
-        //             { tier_name: 'Light Weight Scale',  min_weight: 0.00,  max_weight: 9.49,   rate_per_kg: 590.00 },
-        //             { tier_name: 'Medium Scale',        min_weight: 9.50,  max_weight: 19.49,  rate_per_kg: 500.00 },
-        //             { tier_name: 'Standard Bulk',       min_weight: 19.50, max_weight: 49.99,  rate_per_kg: 478.00 },
-        //             { tier_name: 'Heavy Bulk',          min_weight: 50.00, max_weight: 99.99,  rate_per_kg: 478.00 },
-        //             { tier_name: 'Commercial Freight',  min_weight: 100.00, max_weight: 500.00, rate_per_kg: 445.00 },
-        //             { tier_name: 'Overweight Ceiling',  min_weight: 500.01, max_weight: 99999.0, rate_per_kg: 445.00 }
-        //         ]);
-                
-        //         console.log('🚀 Default shipping rate structures written to the database!');
-        //     } else {
-        //         console.log('ℹ️ Logistics pricing table matrix already populated.');
-        //     }
-        // } catch (pricingSeedError) {
-        //     console.error('⚠️ Pricing structure seeding skipped:', pricingSeedError.message);
-        // }
         
-        try {
-                    console.log('⚡ Running migration to add invoice_notes column...');
-                    await sequelize.query(`
-                        ALTER TABLE shipment 
-                        ADD COLUMN invoice_notes TEXT DEFAULT NULL;
-                    `);
-                    console.log('--- 🎉 SUCCESS: invoice_notes column successfully created! ---');
-                } catch (err) {
-                    // MySQL error code 1060 means "Duplicate column name" (the column already exists)
-                    if (err.parent && err.parent.errno === 1060) {
-                        console.log('--- ℹ️ NOTIFICATION: invoice_notes column already exists, skipping. ---');
-                    } else {
-                        console.error('--- ❌ ACTUAL SQL ERROR: ---', err.message);
-                    }
-                }
+        
+        // try {
+        //             console.log('⚡ Running migration to add invoice_notes column...');
+        //             await sequelize.query(`
+        //                 ALTER TABLE shipment 
+        //                 ADD COLUMN invoice_notes TEXT DEFAULT NULL;
+        //             `);
+        //             console.log('--- 🎉 SUCCESS: invoice_notes column successfully created! ---');
+        //         } catch (err) {
+        //             // MySQL error code 1060 means "Duplicate column name" (the column already exists)
+        //             if (err.parent && err.parent.errno === 1060) {
+        //                 console.log('--- ℹ️ NOTIFICATION: invoice_notes column already exists, skipping. ---');
+        //             } else {
+        //                 console.error('--- ❌ ACTUAL SQL ERROR: ---', err.message);
+        //             }
+        //         }
         // Open communication gate pathways on Render
         app.listen(PORT, () => console.log(`🚀 Server processing on port ${PORT}`));
     })
