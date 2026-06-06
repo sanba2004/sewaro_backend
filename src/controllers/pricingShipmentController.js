@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+const { Op, sequelize } = require('sequelize');
 const PricingShipment = require('../models/PricingShipment');
 
 // 1. GET ALL TIERS
@@ -20,10 +20,15 @@ exports.lookupLiveRate = async (req, res) => {
         }
         const targetWeight = parseFloat(weight) || 0;
 
+        // Clean up input variables
+        const cleanSender = senderCountry.trim();
+        const cleanReceiver = receiverCountry.trim();
+
+        // Use Op.iLike for case-insensitive matching
         const matchedTier = await PricingShipment.findOne({
             where: {
-                sender_country: senderCountry,
-                receiver_country: receiverCountry,
+                sender_country: { [Op.iLike]: cleanSender },
+                receiver_country: { [Op.iLike]: cleanReceiver },
                 min_weight: { [Op.lte]: targetWeight },
                 max_weight: { [Op.gte]: targetWeight }
             }
@@ -37,8 +42,12 @@ exports.lookupLiveRate = async (req, res) => {
             });
         }
 
+        // Fallback query using Op.iLike
         const fallbackTier = await PricingShipment.findOne({
-            where: { sender_country: senderCountry, receiver_country: receiverCountry },
+            where: { 
+                sender_country: { [Op.iLike]: cleanSender }, 
+                receiver_country: { [Op.iLike]: cleanReceiver } 
+            },
             order: [['max_weight', 'DESC']]
         });
 
