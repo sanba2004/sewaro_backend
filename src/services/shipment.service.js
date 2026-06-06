@@ -407,7 +407,8 @@ class ShipmentService {
                 receiver_country: data.receiver_country,
                 billing_method: data.payment_method, 
                 billing_total: data.total_amount,
-                status: data.status 
+                status: data.status ,
+                invoice_notes: data.invoice_notes
             }, { where: { tracking_id: trackingId }, transaction: t });
 
             if (data.shipment_package && Array.isArray(data.shipment_package)) {
