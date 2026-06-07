@@ -175,3 +175,19 @@ exports.updateShipmentDetails = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error", details: error.message });
     }
 };
+
+exports.deleteBulkShipments = async (req, res) => {
+    const { trackingIds } = req.body;
+
+    if (!trackingIds || !Array.isArray(trackingIds) || trackingIds.length === 0) {
+        return res.status(400).json({ error: "Validation Mismatch: A non-empty trackingIds array parameter is required." });
+    }
+
+    try {
+        await shipmentService.deleteBulkShipments(trackingIds);
+        return res.status(200).json({ message: `Successfully deleted ${trackingIds.length} shipments and cascade structures.` });
+    } catch (error) {
+        console.error("Bulk delete routing handling crash:", error.message);
+        return res.status(500).json({ error: "Failed executing database batch removal operation.", details: error.message });
+    }
+};

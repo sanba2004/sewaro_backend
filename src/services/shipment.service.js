@@ -498,6 +498,7 @@ class ShipmentService {
         await shipment.save();
         return status;
     }
+    
 
     async updateCompleteShipment(trackingId, data) {
         await sequelize.transaction(async (t) => {
@@ -561,6 +562,39 @@ class ShipmentService {
             }
         });
     }
+    async deleteBulkShipments(trackingIds) {
+        return await sequelize.transaction(async (t) => {
+            // Find every nested package attached to any of the matching trackingIds
+            const targetedPackages = await Package.findAll({
+                where: { parent_tracking_id: trackingIds },
+                attributes: ['package_id'],
+                transaction: t
+            });
+
+            const packageIds = targetedPackages.map(pkg => pkg.package_id);
+
+            // Step 1: Wipe all bottom tier Manifest Items first
+            if (packageIds.length > 0) {
+                await Item.destroy({
+                    where: { parent_package_id: packageIds },
+                    transaction: t
+                });
+            }
+
+            // Step 2: Wipe the structural Middle Tier Packages
+            await Package.destroy({
+                where: { parent_tracking_id: trackingIds },
+                transaction: t
+            });
+
+            // Step 3: Clear the root Shipment records out entirely
+            await Shipment.destroy({
+                where: { tracking_id: trackingIds },
+                transaction: t
+            });
+        });
+    }
 }
+
 
 module.exports = new ShipmentService();
