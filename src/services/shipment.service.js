@@ -361,50 +361,119 @@ class ShipmentService {
     //         shipments: rows
     //     };
     // }
+    // async getPagedShipments(filters) {
+    //         const { userId, role, dateFrom, dateTo, status, agentId, page, limit } = filters;
+    //         const normalizedRole = role?.toLowerCase();
+
+    //         let findOptions = { 
+    //             where: {},
+    //             order: [['created_at', 'DESC']],
+    //             // 🌟 INJECT ASSOCIATION HERE: Eager load creator details via Left Join
+    //             include: [{
+    //                 model: User,
+    //                 attributes: ['full_name'], // Optimize: only download the necessary name string
+    //                 required: false // Left join so shipments still load if creator profile is absent
+    //             }]
+    //         };
+
+    //         if (normalizedRole !== 'admin') {
+    //             findOptions.where.user_id = Number(userId);
+    //         }
+
+    //         if (dateFrom || dateTo) {
+    //             findOptions.where.created_at = {};
+    //             if (dateFrom) findOptions.where.created_at[Op.gte] = new Date(`${dateFrom}T00:00:00.000Z`);
+    //             if (dateTo) findOptions.where.created_at[Op.lte] = new Date(`${dateTo}T23:59:59.999Z`);
+    //         }
+            
+    //         if (status && status !== 'All') findOptions.where.status = status;
+    //         if (normalizedRole === 'admin' && agentId && agentId !== 'All') findOptions.where.user_id = Number(agentId);
+
+    //         const activePage = parseInt(page) || 1;
+    //         const activeLimit = parseInt(limit) || 50;
+            
+    //         findOptions.limit = activeLimit;
+    //         findOptions.offset = (activePage - 1) * activeLimit;
+
+    //         const { count, rows } = await Shipment.findAndCountAll(findOptions);
+            
+    //         return {
+    //             totalItems: count,
+    //             totalPages: Math.ceil(count / activeLimit),
+    //             currentPage: activePage,
+    //             itemsPerPage: activeLimit,
+    //             shipments: rows
+    //         };
+    //     }
     async getPagedShipments(filters) {
-            const { userId, role, dateFrom, dateTo, status, agentId, page, limit } = filters;
-            const normalizedRole = role?.toLowerCase();
+        const { userId, role, dateFrom, dateTo, status, agentId, page, limit, search } = filters;
+        const normalizedRole = role?.toLowerCase();
 
-            let findOptions = { 
-                where: {},
-                order: [['created_at', 'DESC']],
-                // 🌟 INJECT ASSOCIATION HERE: Eager load creator details via Left Join
-                include: [{
-                    model: User,
-                    attributes: ['full_name'], // Optimize: only download the necessary name string
-                    required: false // Left join so shipments still load if creator profile is absent
-                }]
-            };
+        let findOptions = { 
+            where: {},
+            order: [['created_at', 'DESC']],
+            include: [{
+                model: User,
+                attributes: ['full_name'], 
+                required: false 
+            }]
+        };
 
-            if (normalizedRole !== 'admin') {
-                findOptions.where.user_id = Number(userId);
-            }
-
-            if (dateFrom || dateTo) {
-                findOptions.where.created_at = {};
-                if (dateFrom) findOptions.where.created_at[Op.gte] = new Date(`${dateFrom}T00:00:00.000Z`);
-                if (dateTo) findOptions.where.created_at[Op.lte] = new Date(`${dateTo}T23:59:59.999Z`);
-            }
-            
-            if (status && status !== 'All') findOptions.where.status = status;
-            if (normalizedRole === 'admin' && agentId && agentId !== 'All') findOptions.where.user_id = Number(agentId);
-
-            const activePage = parseInt(page) || 1;
-            const activeLimit = parseInt(limit) || 50;
-            
-            findOptions.limit = activeLimit;
-            findOptions.offset = (activePage - 1) * activeLimit;
-
-            const { count, rows } = await Shipment.findAndCountAll(findOptions);
-            
-            return {
-                totalItems: count,
-                totalPages: Math.ceil(count / activeLimit),
-                currentPage: activePage,
-                itemsPerPage: activeLimit,
-                shipments: rows
-            };
+        // 1. Role-based Access Isolation Controls
+        if (normalizedRole !== 'admin') {
+            findOptions.where.user_id = Number(userId);
         }
+
+        // 2. Date Bounds Matrix Range Parsing
+        if (dateFrom || dateTo) {
+            findOptions.where.created_at = {};
+            if (dateFrom) findOptions.where.created_at[Op.gte] = new Date(`${dateFrom}T00:00:00.000Z`);
+            if (dateTo) findOptions.where.created_at[Op.lte] = new Date(`${dateTo}T23:59:59.999Z`);
+        }
+        
+        // 3. Status Filtering
+        if (status && status !== 'All') findOptions.where.status = status;
+        
+        // 4. Admin Dropdown Filtering
+        if (normalizedRole === 'admin' && agentId && agentId !== 'All') {
+            findOptions.where.user_id = Number(agentId);
+        }
+
+        // 🌟 5. MULTI-FIELD SEARCH COMPILER (Fuzzy queries tracking_id, names, or contact fields)
+        if (search && search.trim() !== '') {
+            const searchToken = `%${search.trim()}%`;
+            
+            findOptions.where[Op.and] = [
+                ...(findOptions.where[Op.and] || []),
+                {
+                    [Op.or]: [
+                        { tracking_id: { [Op.like]: searchToken } },
+                        { sender_name: { [Op.like]: searchToken } },
+                        { sender_contact_num: { [Op.like]: searchToken } },
+                        { receiver_name: { [Op.like]: searchToken } },
+                        { receiver_contact: { [Op.like]: searchToken } }
+                    ]
+                }
+            ];
+        }
+
+        // 6. Pagination offset allocations
+        const activePage = parseInt(page) || 1;
+        const activeLimit = parseInt(limit) || 50;
+        
+        findOptions.limit = activeLimit;
+        findOptions.offset = (activePage - 1) * activeLimit;
+
+        const { count, rows } = await Shipment.findAndCountAll(findOptions);
+        
+        return {
+            totalItems: count,
+            totalPages: Math.ceil(count / activeLimit),
+            currentPage: activePage,
+            itemsPerPage: activeLimit,
+            shipments: rows
+        };
+    }
     async getShipmentDetails(trackingId) {
         return await Shipment.findOne({
             where: { tracking_id: trackingId },
