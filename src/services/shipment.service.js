@@ -258,7 +258,7 @@ const Shipment = require('../models/Shipment');
 const Package = require('../models/Package');
 const Item = require('../models/Item');
 const { Op } = require('sequelize');
-
+const User = require('../models/User');
 class ShipmentService {
     async createNestedShipment(userId, shipment, packages) {
         return await sequelize.transaction(async (t) => {
