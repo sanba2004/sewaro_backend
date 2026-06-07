@@ -1,9 +1,14 @@
-// Go up two levels from src/models to get to root/models
+
 const Shipment = require('./Shipment');
 const Package = require('./Package');
 const Item = require('./Item');
+const User = require('./User'); 
 
 function applyAssociations() {
+
+    Shipment.belongsTo(User, { foreignKey: 'user_id' });
+    User.hasMany(Shipment, { foreignKey: 'user_id' });
+
     Shipment.hasMany(Package, { foreignKey: 'parent_tracking_id', as: 'packages' });
     Package.belongsTo(Shipment, { foreignKey: 'parent_tracking_id' });
 
