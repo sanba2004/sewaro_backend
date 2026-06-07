@@ -1,4 +1,5 @@
 const shipmentService = require('../services/shipment.service');
+const User = require('../models/User'); 
 
 exports.confirmShipment = async (req, res) => {
     const { shipment, packages } = req.body;
