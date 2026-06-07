@@ -11,7 +11,7 @@ exports.confirmShipment = async (req, res) => {
 
     try {
         await shipmentService.createNestedShipment(userId, shipment, packages);
-        return res.status(200).json({ message: "Shipment saved successfully through ORM!" });
+        return res.status(200).json({ message: "Shipment saved successfully!" });
     } catch (error) {
         console.error("Sequelize Transaction Error:", error.message);
         return res.status(500).json({ error: error.message });
