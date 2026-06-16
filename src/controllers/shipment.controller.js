@@ -119,6 +119,7 @@ exports.trackShipment = async (req, res) => {
             currency: shipmentData.billing_currency || "NPR", 
             total_amount: shipmentData.billing_total || shipmentData.billingTotal,
             invoice_notes: shipmentData.invoice_notes,
+            delivery_type: shipmentData.delivery_type ,
             // 🌟 FIXED PACKAGE MAPPING LAYER:
             shipment_package: (shipmentData.packages || []).map(pkg => ({
                 id: pkg.package_id || pkg.id,

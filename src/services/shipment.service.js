@@ -524,7 +524,8 @@ class ShipmentService {
                 billing_method: data.payment_method, 
                 billing_total: data.total_amount,
                 status: data.status ,
-                invoice_notes: data.invoice_notes ?? data.invoiceNotes
+                invoice_notes: data.invoice_notes ?? data.invoiceNotes,
+                delivery_type: data.delivery_type
             }, { where: { tracking_id: trackingId }, transaction: t });
 
             if (data.shipment_package && Array.isArray(data.shipment_package)) {
