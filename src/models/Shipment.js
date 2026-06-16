@@ -21,6 +21,10 @@ receiver_id_url: {
   receiver_contact: { type: DataTypes.STRING },
   receiver_country: { type: DataTypes.STRING },
   receiver_city: { type: DataTypes.STRING },
+  delivery_type: { 
+    type: DataTypes.STRING, 
+    field: 'delivery_type' // Maps to structural schema row columns cleanly
+  },
   receiver_address: { type: DataTypes.TEXT },
   receiver_zip: { type: DataTypes.STRING },
   receiver_landmark: { type: DataTypes.STRING },

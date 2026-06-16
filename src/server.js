@@ -298,7 +298,23 @@ sequelize.authenticate()
         await sequelize.sync(); 
         console.log('🔄 Database schema mapped to ORM entities successfully.');
 
-        
+        // try {
+        //     console.log('⚡ Running migration to add delivery_type column...');
+        //     await sequelize.query(`
+        //         ALTER TABLE shipment 
+        //         ADD COLUMN delivery_type VARCHAR(50);
+        //     `);
+        //     console.log('--- 🎉 SUCCESS: delivery_type column successfully created! ---');
+        // } catch (err) {
+        //     const isDuplicateColumnPostgres = err.parent && err.parent.code === '42701';
+        //     const isDuplicateColumnMySQL = err.parent && err.parent.errno === 1060;
+
+        //     if (isDuplicateColumnPostgres || isDuplicateColumnMySQL) {
+        //         console.log('--- ℹ️ NOTIFICATION: delivery_type column already exists, skipping migration. ---');
+        //     } else {
+        //         console.error('--- ❌ ACTUAL SQL ERROR RUNNING MIGRATION: ---', err.message);
+        //     }
+        // }
         
         // try {
         //             console.log('⚡ Running migration to add invoice_notes column...');

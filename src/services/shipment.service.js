@@ -279,6 +279,7 @@ class ShipmentService {
                 sender_id_type: shipment.senderIdType,
                 receiver_name: shipment.receiverName,
                 receiver_contact: shipment.receiverContact,
+                delivery_type: shipment.deliveryType,
                 receiver_country: shipment.receiverCountry,
                 receiver_city: shipment.receiverCity,
                 receiver_address: shipment.receiverAddress,
