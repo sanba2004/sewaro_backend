@@ -176,10 +176,61 @@ exports.updateStatus = async (req, res) => {
 //         return res.status(500).json({ error: "Internal Server Error", details: error.message });
 //     }
 // };
+
+
+// exports.updateShipmentDetails = async (req, res) => {
+//     const { trackingId } = req.params;
+    
+//     // 1. 🌟 FIX: Extract 'receiver_contact' from req.body to match your frontend data keys!
+//     const { status, receiver_contact, triggerSMS } = req.body;
+
+//     if (!trackingId || !req.body) {
+//         return res.status(400).json({ error: "Validation Mismatch: Missing tracking ID or update payload data." });
+//     }
+
+//     try {
+//         // 2. Execute your standard service ledger update logic to save tracking values
+//         await shipmentService.updateCompleteShipment(trackingId, req.body);
+
+//         // 3. Intercept and execute the automated Nest SMS alert if the flag is active
+//         if (triggerSMS && receiver_contact) {
+//             const cleanPhone = receiver_contact.trim();
+            
+//             const nestSmsPayload = {
+//                 to: cleanPhone,
+//                 // 🌟 FIX: Using process.env.NEST_SMS_TEMPLATE_ID instead of a hardcoded string!
+//                 template_id: process.env.NEST_SMS_TEMPLATE_ID 
+//             };
+
+//             // Dispatch payload out to the Nest SMS gateway cloud
+//             const smsResponse = await fetch('https://auth.nestsms.com/api/v1/sms/send', {
+//                 method: 'POST',
+//                 headers: {
+//                     'X-API-Key': process.env.NEST_SMS_KEY, // Pulled from your safe .env file setup
+//                     'Content-Type': 'application/json'
+//                 },
+//                 body: JSON.stringify(nestSmsPayload)
+//             });
+
+//             const smsResult = await smsResponse.json();
+
+//             if (!smsResponse.ok) {
+//                 console.error(`⚠️ SMS Delivery pipeline failed for shipment ${trackingId}:`, smsResult);
+//             } else {
+//                 console.log(`💬 Notification text cleanly delivered to ${cleanPhone}. Message ID: ${smsResult.message_id || smsResult.batch_id}`);
+//             }
+//         }
+
+//         return res.status(200).json({ message: `Shipment #${trackingId} records successfully replaced!` });
+
+//     } catch (error) {
+//         console.error("Critical update exception inside Controller:", error);
+//         return res.status(500).json({ error: "Internal Server Error", details: error.message });
+//     }
+// };
+
 exports.updateShipmentDetails = async (req, res) => {
     const { trackingId } = req.params;
-    
-    // 1. 🌟 FIX: Extract 'receiver_contact' from req.body to match your frontend data keys!
     const { status, receiver_contact, triggerSMS } = req.body;
 
     if (!trackingId || !req.body) {
@@ -190,32 +241,44 @@ exports.updateShipmentDetails = async (req, res) => {
         // 2. Execute your standard service ledger update logic to save tracking values
         await shipmentService.updateCompleteShipment(trackingId, req.body);
 
-        // 3. Intercept and execute the automated Nest SMS alert if the flag is active
+        // 3. Intercept and execute the automated Nest SMS alert if valid trigger status arrives
         if (triggerSMS && receiver_contact) {
             const cleanPhone = receiver_contact.trim();
             
-            const nestSmsPayload = {
-                to: cleanPhone,
-                // 🌟 FIX: Using process.env.NEST_SMS_TEMPLATE_ID instead of a hardcoded string!
-                template_id: process.env.NEST_SMS_TEMPLATE_ID 
-            };
+            // 🎯 Resolve template ID based on the status action passed from frontend
+            let targetedTemplateId = null;
+            if (triggerSMS === "Ready to Collect") {
+                targetedTemplateId = process.env.NEST_SMS_TEMPLATE_ID;
+            } else if (triggerSMS === "Collected") {
+                targetedTemplateId = process.env.NEST_SMS_TEMPLATE_ID_COLLECTED;
+            }
 
-            // Dispatch payload out to the Nest SMS gateway cloud
-            const smsResponse = await fetch('https://auth.nestsms.com/api/v1/sms/send', {
-                method: 'POST',
-                headers: {
-                    'X-API-Key': process.env.NEST_SMS_KEY, // Pulled from your safe .env file setup
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(nestSmsPayload)
-            });
+            // Only issue API fetch request if a matching template variable was resolved
+            if (targetedTemplateId) {
+                const nestSmsPayload = {
+                    to: cleanPhone,
+                    template_id: targetedTemplateId
+                };
 
-            const smsResult = await smsResponse.json();
+                // Dispatch payload out to the Nest SMS gateway cloud
+                const smsResponse = await fetch('https://auth.nestsms.com/api/v1/sms/send', {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': process.env.NEST_SMS_KEY, 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(nestSmsPayload)
+                });
 
-            if (!smsResponse.ok) {
-                console.error(`⚠️ SMS Delivery pipeline failed for shipment ${trackingId}:`, smsResult);
+                const smsResult = await smsResponse.json();
+
+                if (!smsResponse.ok || smsResult.success === false) {
+                    console.error(`⚠️ SMS Delivery pipeline failed for shipment ${trackingId} [${triggerSMS}]:`, smsResult);
+                } else {
+                    console.log(`💬 ${triggerSMS} SMS text cleanly delivered to ${cleanPhone}. Message ID: ${smsResult.message_id || smsResult.batch_id}`);
+                }
             } else {
-                console.log(`💬 Notification text cleanly delivered to ${cleanPhone}. Message ID: ${smsResult.message_id || smsResult.batch_id}`);
+                console.warn(`⚠️ SMS trigger matched status [${triggerSMS}] but no Template ID could be mapped.`);
             }
         }
 
