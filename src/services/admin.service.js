@@ -108,6 +108,35 @@ class AdminService {
 
         return formattedData;
     }
+    async getCountryVolume(startYear, endYear) {
+    if (!startYear || !endYear) {
+        throw new Error("A valid year range must be provided.");
+    }
+
+    if (startYear > endYear) {
+        [startYear, endYear] = [endYear, startYear];
+    }
+
+    const rawResults = await Shipment.findAll({
+        where: literal(`YEAR(created_at) BETWEEN ${startYear} AND ${endYear}`),
+        attributes: [
+            ['receiver_country', 'country'],
+            [fn('COUNT', col('tracking_id')), 'shipmentCount']
+        ],
+        group: ['receiver_country'],
+        order: [[literal('shipmentCount'), 'DESC']],
+        raw: true
+    });
+
+    const countryMatrix = rawResults
+        .filter(item => item.country) // drop null/empty country entries
+        .map(item => ({
+            country: item.country,
+            shipments: parseInt(item.shipmentCount, 10) || 0
+        }));
+
+    return countryMatrix;
+}
 }
 
 module.exports = new AdminService();

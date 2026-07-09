@@ -148,3 +148,26 @@ exports.deleteAgent = async (req, res) => {
         });
     }
 };
+exports.getCountryVolumeAnalytics = async (req, res) => {
+    try {
+        const currentYear = new Date().getFullYear();
+        const startYear = parseInt(req.query.startYear) || (currentYear - 1);
+        const endYear = parseInt(req.query.endYear) || currentYear;
+
+        const countryData = await adminService.getCountryVolume(startYear, endYear);
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                configuredRange: { startYear, endYear },
+                countryMatrix: countryData
+            }
+        });
+    } catch (error) {
+        console.error('❌ Controller Country Analytics Fault:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Database ledger extraction error analyzing country volume metrics.'
+        });
+    }
+};

@@ -7,5 +7,5 @@ router.get('/agents', adminController.getAgents);
 router.post('/agents/create', adminController.createAgent);
 router.get('/analytics/volume-matrix', adminController.getYearlyMonthVolumeAnalytics);
 router.delete('/agents/:id', adminController.deleteAgent);
-
+router.get('/analytics/country-matrix', adminController.getCountryVolumeAnalytics);
 module.exports = router;
