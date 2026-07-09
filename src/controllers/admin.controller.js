@@ -153,13 +153,15 @@ exports.getCountryVolumeAnalytics = async (req, res) => {
         const currentYear = new Date().getFullYear();
         const startYear = parseInt(req.query.startYear) || (currentYear - 1);
         const endYear = parseInt(req.query.endYear) || currentYear;
+        const direction = req.query.direction === 'origin' ? 'origin' : 'destination'; // safe default
 
-        const countryData = await adminService.getCountryVolume(startYear, endYear);
+        const countryData = await adminService.getCountryVolume(startYear, endYear, direction);
 
         return res.status(200).json({
             success: true,
             data: {
                 configuredRange: { startYear, endYear },
+                direction,
                 countryMatrix: countryData
             }
         });

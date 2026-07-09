@@ -108,7 +108,7 @@ class AdminService {
 
         return formattedData;
     }
-    async getCountryVolume(startYear, endYear) {
+    async getCountryVolume(startYear, endYear, direction = 'destination') {
     if (!startYear || !endYear) {
         throw new Error("A valid year range must be provided.");
     }
@@ -117,25 +117,27 @@ class AdminService {
         [startYear, endYear] = [endYear, startYear];
     }
 
+    // 'destination' = where shipments are sent TO (receiver_country)
+    // 'origin' = where shipments are sent FROM (sender_country)
+    const countryField = direction === 'origin' ? 'sender_country' : 'receiver_country';
+
     const rawResults = await Shipment.findAll({
         where: literal(`YEAR(created_at) BETWEEN ${startYear} AND ${endYear}`),
         attributes: [
-            ['receiver_country', 'country'],
+            [countryField, 'country'],
             [fn('COUNT', col('tracking_id')), 'shipmentCount']
         ],
-        group: ['receiver_country'],
+        group: [countryField],
         order: [[literal('shipmentCount'), 'DESC']],
         raw: true
     });
 
-    const countryMatrix = rawResults
-        .filter(item => item.country) // drop null/empty country entries
+    return rawResults
+        .filter(item => item.country)
         .map(item => ({
             country: item.country,
             shipments: parseInt(item.shipmentCount, 10) || 0
         }));
-
-    return countryMatrix;
 }
 }
 
